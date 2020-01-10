@@ -1,28 +1,75 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png" />
-    <HelloWorld msg="Welcome to Your Vue.js App" />
-  </div>
+  <v-app>
+    <v-content>
+      <v-container fluid>
+        <v-autocomplete
+          ref="autocomplete"
+          v-model="selected"
+          label="Select"
+          :loading="loading"
+          :items="items"
+          :search-input.sync="search"
+        >
+          <template v-slot:append-item>
+            <div
+              v-if="!isLastPage"
+              v-observe-visibility="{
+                callback: visibilityChanged
+              }"
+              class="text-xs-center"
+            >
+              Loading more items ...
+            </div>
+          </template>
+        </v-autocomplete>
+      </v-container>
+    </v-content>
+  </v-app>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld.vue";
-
 export default {
   name: "app",
-  components: {
-    HelloWorld
+
+  data() {
+    return {
+      isLastPage: false,
+      loading: false,
+      items: Array.from(Array(10).keys()),
+      selected: "",
+      search: ""
+    };
+  },
+
+  watch: {
+    search(val) {
+      val && val !== this.selected && this.getItems({ query: val, page: 0 });
+    }
+  },
+
+  methods: {
+    visibilityChanged(e) {
+      e && this.getItems();
+    },
+    getItems() {
+      this.loading = true;
+
+      // simulates ajax request
+      setTimeout(() => {
+        this.items = [
+          ...this.items,
+          ...Array.from(Array(10).keys()).map(e => this.items.length + e)
+        ];
+      }, 500);
+
+      // workaround to refresh list after adding new items.
+      setTimeout(() => {
+        console.log("on scroll");
+        this.$refs.autocomplete.onScroll();
+      }, 500);
+
+      this.loading = false;
+    }
   }
 };
 </script>
-
-<style>
-#app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
